@@ -10,7 +10,7 @@ export SERVER_NAME
 
 CONFIG_NAME="$SERVER_NAME.conf"
 
-VENV_DIR=".venv"
+VENV_DIR="venv"
 
 # Создаём виртуальное окружение, если его нет
 if [ ! -d "$VENV_DIR" ]; then
