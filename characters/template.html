@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Honkai: Star Rail — сравнение персонажей</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+<style>
+:root{--bg:#12141c;--p:#1c1f2b;--t:#e8e8f0;--m:#888;--Dash-Text-Strong:lightgray!important;}
+body{margin:0;background:var(--bg);color:var(--t);font-family:Segoe UI,Arial,sans-serif;padding:10px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+h1{text-align:center;font-size:24px}.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.box{background:var(--p);border-radius:10px;padding:12px;flex:1;min-width:280px}
+select,input{background:#2a2e3d;color:var(--t);border:1px solid #444;border-radius:6px;padding:6px;width:100%;box-sizing:border-box}
+label{display:block;font-size:13px;margin-bottom:4px;color:#b8b8c8}
+.chip{display:inline-block;margin:3px;padding:3px 9px;border-radius:14px;cursor:pointer;color:#111;font-size:13px}
+.el{display:inline-block;margin:2px 8px 2px 0;font-size:13px}
+</style></head><body>
+<h1>Honkai: Star Rail — сравнение персонажей</h1>
+<div class="row">
+ <div class="box" style="flex:3"><label>1. Персонажи (до 6) — начните вводить имя, клик по метке удаляет</label>
+  <input id="add" list="names" placeholder="Добавить персонажа…"><datalist id="names"></datalist><div id="chips"></div></div>
+ <div class="box"><label>2. Характеристика (столбцы, тепловая карта)</label><select id="stat"></select></div>
+ <div class="box"><label>3. Радар</label><select id="norm"><option value="pct">% от максимума</option><option value="abs">абсолютные значения</option></select></div>
+</div>
+<div class="row"><div class="box"><div id="radar"></div></div><div class="box"><div id="bar"></div></div></div>
+<div class="row">
+ <div class="box"><label>4. Ось X</label><select id="sx"></select></div>
+ <div class="box"><label>5. Ось Y</label><select id="sy"></select></div>
+ <div class="box" style="flex:3"><label>6. Стихии</label><div id="els"></div></div>
+ <div class="box"><label>7. Редкость</label><span class="el"><input type="checkbox" class="rar" value="4" checked style="width:auto"> 4★</span><span class="el"><input type="checkbox" class="rar" value="5" checked style="width:auto"> 5★</span></div>
+</div>
+<div class="row"><div class="box" style="flex:3"><div id="scatter"></div></div><div class="box" style="flex:2"><div id="heat"></div></div></div>
+<p style="text-align:center;color:var(--m)">Клик по точке добавляет персонажа в сравнение. Данные: Mar-7th/StarRailRes, уровень 80.</p>
+<script>
+const D=__DATA__;
+const S={hp:'Здоровье (HP)',atk:'Атака',def:'Защита',spd:'Скорость',taunt:'Провокация',max_energy:'Энергия ульты'};
+const R=['hp','atk','def','spd','taunt'];
+const C={'Физический':'#C9C9C9','Огонь':'#FF6B4A','Лёд':'#4FC3F7','Молния':'#C77DFF','Ветер':'#2EE6A8','Квантовый':'#7B7FFF','Мнимый':'#F7E05A'};
+let sel=['Kafka','Silver Wolf','Acheron','Firefly'].filter(n=>D.some(d=>d.name==n));
+const $=id=>document.getElementById(id), by=n=>D.find(d=>d.name==n);
+const L={paper_bgcolor:'#1c1f2b',plot_bgcolor:'#1c1f2b',font:{color:'#e8e8f0'},margin:{t:50,l:50,r:20,b:50},height:420,legend:{orientation:'h',y:-0.2}};
+const mx=k=>Math.max(...D.map(d=>d[k]));
+['stat','sx','sy'].forEach((id,i)=>$(id).innerHTML=Object.entries(S).map(([k,v])=>`<option value="${k}">${v}</option>`).join(''));
+$('stat').value='atk';$('sx').value='spd';$('sy').value='hp';
+$('names').innerHTML=D.map(d=>`<option value="${d.name_ru}">`).join('');
+$('els').innerHTML=Object.entries(C).map(([e,c])=>`<label class="el" style="display:inline-block"><input type="checkbox" class="elc" value="${e}" checked style="width:auto"> <b style="color:${c}">${e}</b></label>`).join('');
+$('add').oninput=e=>{const d=D.find(x=>x.name_ru==e.target.value);if(d)add(d.name),e.target.value=''};
+function add(n){if(!sel.includes(n)&&sel.length<6){sel.push(n);draw()}}
+function chips(){$('chips').innerHTML=sel.map(n=>{const d=by(n);return `<span class="chip" style="background:${C[d.element_ru]}" data-n="${n}">${d.name_ru} ✕</span>`}).join('');
+ document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{sel=sel.filter(n=>n!=c.dataset.n);draw()})}
+function draw(){chips();const st=$('stat').value,pct=$('norm').value=='pct';
+ Plotly.react('radar',sel.map(n=>{const d=by(n),v=R.map(k=>pct?d[k]/mx(k)*100:d[k]);return{type:'scatterpolar',r:[...v,v[0]],theta:[...R,R[0]].map(k=>S[k]),name:d.name_ru,fill:'toself',opacity:.5,line:{color:C[d.element_ru]}}}),
+  {...L,title:'Профиль характеристик (радар)',polar:{bgcolor:'#1c1f2b'}});
+ const b=sel.map(by).sort((a,c)=>c[st]-a[st]),avg=D.reduce((s,d)=>s+d[st],0)/D.length;
+ Plotly.react('bar',[{type:'bar',x:b.map(d=>d.name_ru),y:b.map(d=>d[st]),marker:{color:b.map(d=>C[d.element_ru])},text:b.map(d=>Math.round(d[st])),textposition:'outside'}],
+  {...L,title:S[st]+': выбранные персонажи',shapes:[{type:'line',xref:'paper',x0:0,x1:1,y0:avg,y1:avg,line:{dash:'dot',color:'#aaa'}}],annotations:[{xref:'paper',x:1,y:avg,text:'среднее по всем',showarrow:false,yanchor:'bottom',xanchor:'right',font:{color:'#aaa'}}]});
+ const x=$('sx').value,y=$('sy').value,els=[...document.querySelectorAll('.elc:checked')].map(e=>e.value),rar=[...document.querySelectorAll('.rar:checked')].map(e=>+e.value);
+ const tr=els.map(e=>{const d=D.filter(q=>q.element_ru==e&&rar.includes(q.rarity));return{type:'scatter',mode:'markers',name:e,x:d.map(q=>q[x]),y:d.map(q=>q[y]),text:d.map(q=>q.name_ru+' · '+q.path_ru+' · '+q.rarity+'★'),customdata:d.map(q=>q.name),hovertemplate:'%{text}<br>%{x}, %{y}<extra></extra>',marker:{size:d.map(q=>q.rarity==5?13:9),color:C[e],opacity:.85}}});
+ const s=sel.map(by);tr.push({type:'scatter',mode:'markers+text',x:s.map(q=>q[x]),y:s.map(q=>q[y]),text:s.map(q=>q.name_ru),textposition:'top center',marker:{size:20,color:'rgba(0,0,0,0)',line:{color:'white',width:2}},showlegend:false,hoverinfo:'skip'});
+ Plotly.react('scatter',tr,{...L,height:480,title:S[y]+' и '+S[x]+': все персонажи',xaxis:{title:S[x]},yaxis:{title:S[y]}}).then(g=>{g.removeAllListeners&&g.removeAllListeners('plotly_click');g.on('plotly_click',e=>{const n=e.points[0].customdata;if(n)add(n)})});
+ const ps=[...new Set(D.map(d=>d.path_ru))],es=Object.keys(C);
+ const z=ps.map(p=>es.map(e=>{const a=D.filter(d=>d.path_ru==p&&d.element_ru==e);return a.length?a.reduce((s,d)=>s+d[st],0)/a.length:null}));
+ Plotly.react('heat',[{type:'heatmap',x:es,y:ps,z,colorscale:'Viridis',text:z.map(r=>r.map(v=>v?Math.round(v):'')),texttemplate:'%{text}',hoverongaps:false}],{...L,height:480,title:'Среднее: '+S[st]+' по Пути и Стихии'});}
+document.querySelectorAll('select,.elc,.rar').forEach(e=>e.onchange=draw);draw();
+</script></body></html>
