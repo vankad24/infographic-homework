@@ -186,7 +186,8 @@ def ctl(label, comp):
     return html.Div([html.Label(label, className='ctl'), comp])
 
 
-app = Dash(__name__, title='Байкальская природная территория: дашборд')
+app = Dash(__name__, title='Байкальская природная территория: дашборд', requests_pathname_prefix="/dataton/",
+    routes_pathname_prefix="/dataton/")
 server = app.server
 
 app.layout = html.Div(className='page', children=[

@@ -23,7 +23,7 @@ def style(fig, h=420):
                       font_color=TXT, height=h, margin=dict(t=60, l=50, r=20, b=40))
     return fig
 
-app = Dash(__name__)
+app = Dash(__name__, requests_pathname_prefix="/characters/", routes_pathname_prefix="/characters/")
 server = app.server
 box = {'background': PANEL, 'padding': '12px', 'borderRadius': '10px', 'margin': '8px'}
 dd = {'color': '#111'}

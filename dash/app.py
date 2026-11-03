@@ -23,7 +23,8 @@ YEAR_MIN, YEAR_MAX = int(years[0]), int(years[-1])
 
 # ---------- Приложение ----------
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+app = Dash(__name__, external_stylesheets=external_stylesheets, requests_pathname_prefix="/dash/",
+    routes_pathname_prefix="/dash/")
 server = app.server  # нужен для gunicorn (Render / PythonAnywhere)
 
 card = {'padding': '10px'}
